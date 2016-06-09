@@ -35,7 +35,6 @@ void groupAnagrams(std::vector<string> words) {
 bool mySortFunc(string str1, string str2) {
 	std::sort(str1.begin(), str1.end());
 	std::sort(str2.begin(), str2.end());
-	bool ret = str1 == str2;
 	return str1<str2;
 }
 int main()
