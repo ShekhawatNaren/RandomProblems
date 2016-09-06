@@ -1,0 +1,124 @@
+#include "stdafx.h"
+#include "stdio.h"
+#include <iostream>
+#include <algorithm>
+#include <vector>
+#include <numeric>
+#include <functional>
+using namespace std;
+/*
+Given an array, , of  integers, you must answer  queries. Each query consists of a single integer, , and is performed as follows:
+
+Add  to each element of the array, permanently modifying it for any future queries.
+Find the absolute value of each element in the array and print the sum of the absolute values on a new line.
+Tip: The Input/Output for this challenge is very large, so you'll have to be creative in your approach to pass all test cases.
+
+Input Format
+
+The first line contains an integer, N (the number of elements in array A).
+The second line contains N space-separated integers describing each element i in array A.
+The third line contains Q (the number of queries).
+The fourth line contains Q space-separated integers (describing each Xj).
+*/
+/*
+sort the elements and divide them into two halves (negative and positive)
+Accumulate all the query numbers till now, for example for Q3=Q1+Q2+Q3
+use the above accumulated query number to identify the side which will have decrease in numbers
+and which all numbers use this information to calculate the absolute sum
+*/
+int main() {
+	std::ios::sync_with_stdio(false);
+
+	int N = 0;
+	cin >> N;
+	vector<long long int> negIp;
+	vector<long long int> posIp;
+	long long int lSum = 0;
+	long long int rSum = 0;
+	while (N-- > 0) {
+		long long int num = 0;
+		cin >> num;
+		if (num < 0) {
+			lSum += num;
+			negIp.push_back(num);
+		}
+		else {
+			rSum += num;
+			posIp.push_back(num);
+		}
+	}
+	int Q = 0;
+	cin >> Q;
+	vector<long long int> qNumbers;
+	
+	while (Q-- > 0) {
+		long long int qnum=0;
+		cin >> qnum;
+		qNumbers.push_back(qnum);
+	}
+
+	std::sort(negIp.begin(), negIp.end(),std::greater<long long int>());
+	std::sort(posIp.begin(), posIp.end());
+
+	//To make the queries faster let's calculate prefix sum
+	vector<long long int> posPreSum;
+	long long int tempSum = 0;
+	for_each(posIp.begin(), posIp.end(), [&tempSum, &posPreSum](long long int p) { tempSum += p; posPreSum.push_back(tempSum); });
+	vector<long long int> negPreSum;
+	tempSum = 0;
+	for_each(negIp.begin(), negIp.end(), [&tempSum, &negPreSum](long long int n) { tempSum += n; negPreSum.push_back(tempSum); });
+
+	int lSize = negIp.size();
+	int rSize = posIp.size();
+
+	long long int qSum = 0;
+	for (long long int q : qNumbers) {
+		qSum += q;
+		if (qSum < 0) {
+			//if negative number than it will affect positive numbers;
+			long long int affectedNumNewNum = 0;
+			long long int countAffectedNum=0;
+			long long int affectedNumOldSum = 0;
+      //find the index of the number till which all the number will be impacted by qSum addition
+			auto it = std::upper_bound(posIp.begin(), posIp.end(), -1 * qSum);
+			countAffectedNum = it - posIp.begin(); //get the count of numbers impacted with this query
+			
+			//calculate the new sum for the affected numbers this will change the absolute sum
+			if (countAffectedNum > 0) {
+				affectedNumOldSum = posPreSum[countAffectedNum - 1];
+				affectedNumNewNum = affectedNumOldSum + qSum*countAffectedNum;
+			}
+
+			long long int newLSum = lSize*qSum + lSum;
+			long long int newRSum = (rSize - countAffectedNum)*qSum + (rSum - affectedNumOldSum);
+			long long int finalSum = abs(newLSum) + abs(affectedNumNewNum) + abs(newRSum);
+			cout << finalSum;
+		}
+		else if (qSum > 0) {
+			//if negative number than it will affect positive numbers;
+			long long int countAffectedNum = 0;
+			long long int affectedNumOldSum = 0;
+			long long int affectedNumNewNum = 0;
+			
+			auto it = std::upper_bound(negIp.begin(), negIp.end(), -1 * qSum, std::greater<long long int>());
+			countAffectedNum = it - negIp.begin();
+
+			if (countAffectedNum > 0) {
+				affectedNumOldSum = negPreSum[countAffectedNum - 1];
+				affectedNumNewNum = affectedNumOldSum + qSum*countAffectedNum;
+			}
+
+			long long int newLSum = rSize*qSum + rSum;
+			long long int newRSum = (lSize - countAffectedNum)*qSum + (lSum - affectedNumOldSum);
+			long long int finalSum = abs(newLSum) + abs(affectedNumNewNum) + abs(newRSum);
+			cout << finalSum;
+		}
+		else {
+			long long int finalSum = std::abs(lSum) + std::abs(rSum);
+			cout << finalSum;
+		}
+		cout << endl;
+	}
+
+	return 0;
+}
